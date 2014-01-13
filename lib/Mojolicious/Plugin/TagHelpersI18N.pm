@@ -7,18 +7,24 @@ use warnings;
 
 use Mojolicious::Plugin::TagHelpers;
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 use Mojo::Collection;
 use Mojo::Util qw(deprecated xml_escape);
 use Scalar::Util 'blessed';
+use Unicode::Collate;
+
+use Data::Dumper;
 
 use parent 'Mojolicious::Plugin';
 
 sub register {
     my ($self, $app, $config) = @_;
 
-    $app->helper( select_field => \&_select_field );
+    my $collate = Unicode::Collate->new;
+    $app->helper( select_field => sub {
+        _select_field(@_, collate => $collate )
+    } );
 
     $config ||= {};
     $app->attr(
@@ -26,21 +32,38 @@ sub register {
     );
 }
 
-sub _option {
-    my ($self, $values, $pair, $no_translation) = @_;
-    $pair = [$pair => $pair] unless ref $pair eq 'ARRAY';
+sub _prepare {
+    my ($self, $options, %attr) = @_;
 
-    if ( !$no_translation ) {
-        my $method = $self->app->translation_method;
-        $pair->[0] = $self->$method( $pair->[0] );
+    my %translated;
+    my $index = 0;
+    for my $option ( @{$options} ) {
+        if (ref $option eq 'HASH') {
+            deprecated
+                'hash references are DEPRECATED in favor of Mojo::Collection objects';
+            $option = Mojo::Collection->new(each %$option);
+        }
+
+        $option = [$option => $option] unless ref $option eq 'ARRAY';
+
+        if ( !$attr{no_translation} ) {
+            my $method   = $self->app->translation_method;
+            $option->[0] = $self->$method( $option->[0] );
+        }
+
+        push @{ $translated{ $option->[0] } }, $index;
+
+        $index++;
     }
 
-    # Attributes
-    my %attrs = (value => $pair->[1]);
-    $attrs{selected} = 'selected' if exists $values->{$pair->[1]};
-    %attrs = (%attrs, @$pair[2 .. $#$pair]);
+    if ( $attr{sort} ) {
+        my @sorted = $attr{collate}->sort( keys %translated );
+        my @sorted_options = map{ @{$options}[ @{ $translated{$_} } ] }@sorted; 
 
-    return Mojolicious::Plugin::TagHelpers::_tag('option', %attrs, sub { xml_escape $pair->[0] });
+        return \@sorted_options;
+    }
+
+    return $options;
 }
 
 sub _select_field {
@@ -48,7 +71,11 @@ sub _select_field {
 
     my %values = map { $_ => 1 } $self->param($name);
 
-    my $no = delete $attrs{no_translation};
+    my %opts;
+    my @fields = qw(no_translation sort collate);
+    @opts{@fields} = delete @attrs{@fields};
+
+    $options = _prepare( $self, $options, %opts );
 
     my $groups = '';
     for my $group (@$options) {
@@ -63,12 +90,13 @@ sub _select_field {
         # "optgroup" tag
         if (blessed $group && $group->isa('Mojo::Collection')) {
             my ($label, $values) = splice @$group, 0, 2;
-            my $content = join '', map { _option($self, \%values, $_, $no) } @$values;
+            my $prepared = _prepare( $self, $values, %opts );
+            my $content = join '', map { Mojolicious::Plugin::TagHelpers::_option(\%values, $_) } @$prepared;
             $groups .= Mojolicious::Plugin::TagHelpers::_tag('optgroup', label => $label, @$group, sub {$content});
         }
 
         # "option" tag
-        else { $groups .= _option($self, \%values, $group, $no) }
+        else { $groups .= Mojolicious::Plugin::TagHelpers::_option(\%values, $group) }
     }
 
     return Mojolicious::Plugin::TagHelpers::_validation(
@@ -116,7 +144,7 @@ This plugin is the solution for that.
 Additionally to the stock C<select_field> helper, you can pass the option I<no_translation> to avoid
 translated values
  
-  %= select_field test => [qw(hello one)]
+  %= select_field test => [qw(hello one)];
 
 results in
 
@@ -124,7 +152,7 @@ results in
 
 and
 
-  %= select_field test => [qw(hello one)], no_translation => 1
+  %= select_field test => [qw(hello one)], no_translation => 1;
 
 results in
 
@@ -134,6 +162,12 @@ in de.pm:
 
   'hello' => 'Hallo',
   'one'   => 'eins',
+
+With this module you can sort the options:
+
+  %= select_field test => [qw/one hello/], sort => 1;
+
+With translation enabled, the translated labels are sorted.
 
 More info about I<select_field>: L<Mojolicious::Plugin::TagHelpers>
  

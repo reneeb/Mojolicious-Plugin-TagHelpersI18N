@@ -14,6 +14,8 @@ plugin('TagHelpersI18N');
 any '/' => sub {
     my $self = shift;
 
+    $self->languages( $self->param('lang') || 'de' );
+
     $self->render( 'default' );
 };
 

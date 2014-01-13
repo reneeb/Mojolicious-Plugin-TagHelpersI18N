@@ -48,8 +48,8 @@ done_testing();
 
 __DATA__
 @@ default.html.ep
-%= select_field 'test' => [qw/hello test/];
+%= select_field 'test' => [qw/test hello/], sort => 1;
 
 @@ no.html.ep
-%= select_field 'test' => [qw/hello test/], no_translation => 1;
+%= select_field 'test' => [qw/test hello/], no_translation => 1, sort => 1;
 
