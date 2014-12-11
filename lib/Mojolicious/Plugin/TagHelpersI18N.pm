@@ -69,7 +69,7 @@ sub _prepare {
 sub _select_field {
     my ($self, $name, $options, %attrs) = (shift, shift, shift, @_);
 
-    my %values = map { $_ => 1 } $self->param($name);
+    my %values = map { $_ => 1 } @{ $self->every_param($name) || [] };
 
     my %opts;
     my @fields = qw(no_translation sort collate);
