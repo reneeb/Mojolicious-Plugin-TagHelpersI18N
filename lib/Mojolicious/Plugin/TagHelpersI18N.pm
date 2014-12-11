@@ -7,7 +7,7 @@ use warnings;
 
 use Mojolicious::Plugin::TagHelpers;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 use Mojo::Collection;
 use Mojo::Util qw(deprecated xml_escape);
