@@ -6,7 +6,7 @@ use Test::More;
 use Test::Mojo;
 use File::Basename;
 
-use lib dirname(__FILE__);
+use lib dirname( __FILE__ );
 
 use utf8;
 
@@ -17,7 +17,12 @@ sub Mojolicious::Lite::fail_with {};
 ## Webapp START
 
 plugin('I18N' => {namespace => 'Local::I18N', default => 'de'});
-plugin('TagHelpersI18N');
+plugin('TagHelpersI18N' => { method => 'translate' });
+
+app->helper( translate => sub {
+    my $c = shift;
+    $c->l( @_ );
+});
 
 any '/'      => sub {
     my $self = shift; 
@@ -46,8 +51,8 @@ done_testing();
 
 __DATA__
 @@ default.html.ep
-%= select_field 'test' => [qw/test hello/], sort => 1;
+%= select_field 'test' => [qw/hello test/];
 
 @@ no.html.ep
-%= select_field 'test' => [qw/test hello/], no_translation => 1, sort => 1;
+%= select_field 'test' => [qw/hello test/], no_translation => 1;
 
