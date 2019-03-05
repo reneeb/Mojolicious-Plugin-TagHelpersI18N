@@ -1,0 +1,134 @@
+[![Build Status](https://travis-ci.org/reneeb/Mojolicious-Plugin-TagHelpersI18N.svg?branch=master)](https://travis-ci.org/reneeb/Mojolicious-Plugin-TagHelpersI18N)
+[![Kwalitee status](http://cpants.cpanauthors.org/dist/Mojolicious-Plugin-TagHelpersI18N.png)](http://cpants.charsbar.org/dist/overview/Mojolicious-Plugin-TagHelpersI18N)
+[![GitHub issues](https://img.shields.io/github/issues/reneeb/Mojolicious-Plugin-TagHelpersI18N.svg)](https://github.com/reneeb/Mojolicious-Plugin-TagHelpersI18N/issues)
+
+# NAME
+
+Mojolicious::Plugin::TagHelpersI18N - TagHelpers with I18N support
+
+# VERSION
+
+version 0.03
+
+# SYNOPSIS
+
+    use Mojolicious::Lite;
+    
+    plugin('I18N' => { namespace => 'Local::I18N', default => 'de' } );
+    plugin('TagHelpersI18N');
+    
+    any '/' => sub {
+        my $self = shift;
+    
+        $self->render( 'default' );
+    };
+    
+    any '/no' => sub { shift->render };
+    
+    app->start;
+    
+    __DATA__
+    @@ default.html.ep
+    %= select_field 'test' => [qw/hello test/];
+    
+    @@ no.html.ep
+    %= select_field 'test' => [qw/hello test/], no_translation => 1
+
+# DESCRIPTION
+
+The TagHelpers in _Mojolicious::Plugin::TagHelpers_ are really nice. Unfortunately, I need to create 
+`select` fields where the labels are translated.
+
+This plugin is the solution for that.
+
+# HELPER
+
+## select\_field
+
+Additionally to the stock `select_field` helper, you can pass the option _no\_translation_ to avoid
+translated values
+
+    %= select_field test => [qw(hello one)];
+
+results in
+
+    <select name="test"><option value="hello">Hallo</option><option value="one">eins</option></select>
+
+and
+
+    %= select_field test => [qw(hello one)], no_translation => 1;
+
+results in
+
+    <select name="test"><option value="hello">hello</option><option value="one">one</option></select>
+
+in de.pm:
+
+    'hello' => 'Hallo',
+    'one'   => 'eins',
+
+With this module you can sort the options:
+
+    %= select_field test => [qw/one hello/], sort => 1;
+
+With translation enabled, the translated labels are sorted.
+
+More info about _select\_field_: [Mojolicious::Plugin::TagHelpers](https://metacpan.org/pod/Mojolicious::Plugin::TagHelpers)
+
+
+
+# Development
+
+The distribution is contained in a Git repository, so simply clone the
+repository
+
+```
+$ git clone http://github.com/reneeb/Mojolicious-Plugin-TagHelpersI18N.git
+```
+
+and change into the newly-created directory.
+
+```
+$ cd Mojolicious-Plugin-TagHelpersI18N
+```
+
+The project uses [`Dist::Zilla`](https://metacpan.org/pod/Dist::Zilla) to
+build the distribution, hence this will need to be installed before
+continuing:
+
+```
+$ cpanm Dist::Zilla
+```
+
+To install the required prequisite packages, run the following set of
+commands:
+
+```
+$ dzil authordeps --missing | cpanm
+$ dzil listdeps --author --missing | cpanm
+```
+
+The distribution can be tested like so:
+
+```
+$ dzil test
+```
+
+To run the full set of tests (including author and release-process tests),
+add the `--author` and `--release` options:
+
+```
+$ dzil test --author --release
+```
+
+# AUTHOR
+
+Renee Baecker <reneeb@cpan.org>
+
+# COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2014 by Renee Baecker.
+
+This is free software, licensed under:
+
+    The Artistic License 2.0 (GPL Compatible)
